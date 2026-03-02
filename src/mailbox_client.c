@@ -33,19 +33,14 @@ __attribute__((weak)) mbptr_t __mb_save_irq()
 
 __attribute__((weak)) void __mb_restore_irq(mbptr_t flags)
 {
-    void(mbptr_t(flags));
 }
 
 __attribute__((weak)) void __mb_rfence(mbptr_t start, uintptr_t size)
 {
-    void(mbptr_t(start));
-    void(uintptr_t(size));
 }
 
 __attribute__((weak)) void __mb_wfence(mbptr_t start, uintptr_t size)
 {
-    void(mbptr_t(start));
-    void(uintptr_t(size));
 }
 
 inline bool is_ready(mb_channel *ch)
@@ -166,7 +161,7 @@ inline mb_resp_entry *mb_send(mb_channel *ch, const mb_req_entry *req)
     return resp;
 }
 
-void mb_cprint(const char *fmt_str, const char *file, uint32_t pos, uintptr_t args_len, const uintptr_t *args)
+void mb_rpc_cprint(mb_channel *ch, const char *fmt_str, const char *file, uint32_t pos, uintptr_t args_len, const uintptr_t *args)
 {
     mb_req_entry entry;
     entry.action = MB_CPRINT;
@@ -179,10 +174,10 @@ void mb_cprint(const char *fmt_str, const char *file, uint32_t pos, uintptr_t ar
     {
         entry.args[3 + i] = args[i];
     }
-    mb_send_nb(get_mb_ch(), &entry);
+    mb_send_nb(ch, &entry);
 }
 
-mbptr_t mb_call(const char *method, uintptr_t args_len, const uintptr_t *args)
+mbptr_t mb_rpc_call(mb_channel *ch, const char *method, uintptr_t args_len, const uintptr_t *args)
 {
     mb_req_entry entry;
     entry.action = MB_CALL;
@@ -193,19 +188,19 @@ mbptr_t mb_call(const char *method, uintptr_t args_len, const uintptr_t *args)
     {
         entry.args[1 + i] = args[i];
     }
-    return mb_send(get_mb_ch(), &entry)->rets;
+    return mb_send(ch, &entry)->rets;
 }
 
-void mb_exit(uint32_t code)
+void mb_rpc_exit(mb_channel *ch, uint32_t code)
 {
     mb_req_entry entry;
     entry.action = MB_EXIT;
     entry.words = 1;
     entry.args[0] = (mbptr_t)(code);
-    mb_send_nb(get_mb_ch(), &entry);
+    mb_send_nb(ch, &entry);
 }
 
-MB_FD mb_fopen(const char *path, uint32_t flags)
+MB_FD mb_rpc_fopen(mb_channel *ch, const char *path, uint32_t flags)
 {
     mb_req_entry entry;
     entry.action = MB_FILEACCESS;
@@ -214,20 +209,20 @@ MB_FD mb_fopen(const char *path, uint32_t flags)
     entry.args[1] = (mbptr_t)((uintptr_t)(path));
     entry.args[2] = (mbptr_t)(flags);
 
-    return (MB_FD)(mb_send(get_mb_ch(), &entry)->rets);
+    return (MB_FD)(mb_send(ch, &entry)->rets);
 }
 
-void mb_fclose(MB_FD fd)
+void mb_rpc_fclose(mb_channel *ch, MB_FD fd)
 {
     mb_req_entry entry;
     entry.action = MB_FILEACCESS;
     entry.words = 2;
     entry.args[0] = (mbptr_t)(MB_FILE_ACTION_CLOSE);
     entry.args[1] = (mbptr_t)(fd);
-    mb_send_nb(get_mb_ch(), &entry);
+    mb_send_nb(ch, &entry);
 }
 
-uintptr_t mb_fread(MB_FD fd, void *data, uintptr_t len)
+uintptr_t mb_rpc_fread(mb_channel *ch, MB_FD fd, void *data, uintptr_t len)
 {
     mb_req_entry entry;
     entry.action = MB_FILEACCESS;
@@ -237,10 +232,10 @@ uintptr_t mb_fread(MB_FD fd, void *data, uintptr_t len)
     entry.args[2] = (mbptr_t)((uintptr_t)(data));
     entry.args[3] = (mbptr_t)(len);
 
-    return (uintptr_t)(mb_send(get_mb_ch(), &entry)->rets);
+    return (uintptr_t)(mb_send(ch, &entry)->rets);
 }
 
-uintptr_t mb_fwrite(MB_FD fd, const void *data, uintptr_t len)
+uintptr_t mb_rpc_fwrite(mb_channel *ch, MB_FD fd, const void *data, uintptr_t len)
 {
     mb_req_entry entry;
     entry.action = MB_FILEACCESS;
@@ -250,10 +245,10 @@ uintptr_t mb_fwrite(MB_FD fd, const void *data, uintptr_t len)
     entry.args[2] = (mbptr_t)((uintptr_t)(data));
     entry.args[3] = (mbptr_t)(len);
 
-    return (uintptr_t)(mb_send(get_mb_ch(), &entry)->rets);
+    return (uintptr_t)(mb_send(ch, &entry)->rets);
 }
 
-uintptr_t mb_fseek(MB_FD fd, uintptr_t pos)
+uintptr_t mb_rpc_fseek(mb_channel *ch, MB_FD fd, uintptr_t pos)
 {
     mb_req_entry entry;
     entry.action = MB_FILEACCESS;
@@ -262,10 +257,10 @@ uintptr_t mb_fseek(MB_FD fd, uintptr_t pos)
     entry.args[1] = (mbptr_t)(fd);
     entry.args[2] = (mbptr_t)(pos);
 
-    return (uintptr_t)(mb_send(get_mb_ch(), &entry)->rets);
+    return (uintptr_t)(mb_send(ch, &entry)->rets);
 }
 
-int32_t mb_memcmp(const void *s1, const void *s2, uintptr_t size)
+int32_t mb_rpc_memcmp(mb_channel *ch, const void *s1, const void *s2, uintptr_t size)
 {
     mb_req_entry entry;
     entry.action = MB_MEMCMP;
@@ -274,10 +269,10 @@ int32_t mb_memcmp(const void *s1, const void *s2, uintptr_t size)
     entry.args[1] = (mbptr_t)((uintptr_t)(s2));
     entry.args[2] = (mbptr_t)(size);
 
-    return (int32_t)(mb_send(get_mb_ch(), &entry)->rets);
+    return (int32_t)(mb_send(ch, &entry)->rets);
 }
 
-void *mb_memmove(void *dst, const void *src, uintptr_t size)
+void *mb_rpc_memmove(mb_channel *ch, void *dst, const void *src, uintptr_t size)
 {
     mb_req_entry entry;
     entry.action = MB_MEMMOVE;
@@ -286,11 +281,11 @@ void *mb_memmove(void *dst, const void *src, uintptr_t size)
     entry.args[1] = (mbptr_t)((uintptr_t)(src));
     entry.args[2] = (mbptr_t)(size);
 
-    mb_send(get_mb_ch(), &entry);
+    mb_send(ch, &entry);
     return dst;
 }
 
-void *mb_memset(void *dst, int data, uintptr_t size)
+void *mb_rpc_memset(mb_channel *ch, void *dst, int data, uintptr_t size)
 {
     mb_req_entry entry;
     entry.action = MB_MEMSET;
@@ -299,6 +294,6 @@ void *mb_memset(void *dst, int data, uintptr_t size)
     entry.args[1] = (mbptr_t)(data);
     entry.args[2] = (mbptr_t)(size);
 
-    mb_send(get_mb_ch(), &entry);
+    mb_send(ch, &entry);
     return dst;
 }

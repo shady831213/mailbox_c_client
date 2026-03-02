@@ -4,21 +4,6 @@
 #include "stdint.h"
 #include "stdbool.h"
 #include "stdarg.h"
-#define NTH_ARG(A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, N, ...) N
-#define COUNT_VARGS(...) NTH_ARG(__VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
-#define va_args_to_ptr(first_arg, rest_args, rest_args_len, va_len, first_type, rest_type) \
-    {                                                                                      \
-        va_list args;                                                                      \
-        va_start(args, (va_len));                                                          \
-        first_arg = (first_type)va_arg(args, first_type);                                  \
-        unsigned int i = 0;                                                                \
-        for (i = 0; i < (rest_args_len); i++)                                              \
-        {                                                                                  \
-            (rest_args)[i] = (rest_type)va_arg(args, rest_type);                           \
-        }                                                                                  \
-        va_end(args);                                                                      \
-    }
-
 #ifndef MBPTR64
 typedef uint32_t mbptr_t;
 #else
@@ -122,46 +107,15 @@ typedef struct
 void mb_reset(mb_channel *ch);
 void mb_send_nb(mb_channel *ch, const mb_req_entry *req);
 mb_resp_entry *mb_send(mb_channel *ch, const mb_req_entry *req);
-void mb_cprint(const char *fmt_str, const char *file, uint32_t pos, uintptr_t args_len, const uintptr_t *args);
-mbptr_t mb_call(const char *method, uintptr_t args_len, const uintptr_t *args);
-void mb_exit(uint32_t code);
-MB_FD mb_fopen(const char *path, uint32_t flags);
-void mb_fclose(MB_FD fd);
-uintptr_t mb_fread(MB_FD fd, void *data, uintptr_t len);
-uintptr_t mb_fwrite(MB_FD fd, const void *data, uintptr_t len);
-uintptr_t mb_fseek(MB_FD fd, uintptr_t pos);
-int32_t mb_memcmp(const void *s1, const void *s2, uintptr_t size);
-void *mb_memmove(void *dst, const void *src, uintptr_t size);
-void *mb_memset(void *dst, int data, uintptr_t size);
-
-static inline void mb_printf_wrapper(const char *file, unsigned int line, uintptr_t args_len, ...)
-{
-    uintptr_t buf[16];
-    const char *fmt;
-    uintptr_t num_args = (args_len - 1) > 16 ? 16 : args_len - 1;
-    va_args_to_ptr(fmt, buf, num_args, args_len, const char *, uintptr_t);
-    mb_cprint(fmt, file, line, num_args, buf);
-}
-#define mb_printf(...) mb_printf_wrapper(__FILE__, __LINE__, COUNT_VARGS(__VA_ARGS__), __VA_ARGS__)
-#define float_to_arg(f) ({           \
-    float _f = (f);                  \
-    (uintptr_t)(*(uint32_t *)(&_f)); \
-})
-static inline uintptr_t mb_call_wrapper(uintptr_t args_len, ...)
-{
-    uintptr_t buf[16];
-    const char *method;
-    uintptr_t num_args = (args_len - 1) > 16 ? 16 : args_len - 1;
-    va_args_to_ptr(method, buf, num_args, args_len, const char *, uintptr_t);
-    return (uintptr_t)(mb_call(method, num_args, buf));
-}
-#define mbcall(...) mb_call_wrapper(COUNT_VARGS(__VA_ARGS__), __VA_ARGS__)
-
-#define bd_memmove(dest, src, size) mb_memmove((void *)(dest), (void *)(src), (uintptr_t)(size))
-
-#define bd_memcpy(dest, src, size) mb_memmove((void *)(dest), (void *)(src), (uintptr_t)(size))
-
-#define bd_memset(dest, data, size) mb_memset((void *)(dest), (unsigned int)((unsigned char)(data)), (uintptr_t)(size))
-
-#define bd_memcmp(s1, s2, size) mb_memcmp((void *)(s1), (void *)(s2), (uintptr_t)(size))
+void mb_rpc_cprint(mb_channel *ch, const char *fmt_str, const char *file, uint32_t pos, uintptr_t args_len, const uintptr_t *args);
+mbptr_t mb_rpc_call(mb_channel *ch, const char *method, uintptr_t args_len, const uintptr_t *args);
+void mb_rpc_exit(mb_channel *ch, uint32_t code);
+MB_FD mb_rpc_fopen(mb_channel *ch, const char *path, uint32_t flags);
+void mb_rpc_fclose(mb_channel *ch, MB_FD fd);
+uintptr_t mb_rpc_fread(mb_channel *ch, MB_FD fd, void *data, uintptr_t len);
+uintptr_t mb_rpc_fwrite(mb_channel *ch, MB_FD fd, const void *data, uintptr_t len);
+uintptr_t mb_rpc_fseek(mb_channel *ch, MB_FD fd, uintptr_t pos);
+int32_t mb_rpc_memcmp(mb_channel *ch, const void *s1, const void *s2, uintptr_t size);
+void *mb_rpc_memmove(mb_channel *ch, void *dst, const void *src, uintptr_t size);
+void *mb_rpc_memset(mb_channel *ch, void *dst, int data, uintptr_t size);
 #endif
