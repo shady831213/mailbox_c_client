@@ -31,4 +31,4 @@ inline mb_channel *get_mb_ch() {
 - not support rust print
 - not support spin locked mailbox channel
 
- [mailbox_rs](https://github.com/shady831213/mailbox_rs) is recommanded. C version is only for pure c env can not use  [vf_rs](https://github.com/shady831213/vfw_rs).
+ [mailbox_rs](https://github.com/shady831213/mailbox_rs) is recommanded. C version is only for pure c env can not use  [vfw_rs](https://github.com/shady831213/vfw_rs).
