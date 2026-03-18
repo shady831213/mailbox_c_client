@@ -52,11 +52,13 @@ inline void mb_reset(mb_channel *ch)
 {
     mb_write32(&ch->version, MB_VERSION);
     mb_write32(&ch->state, MB_ST_INIT);
+    __mb_wfence((mbptr_t)((uintptr_t)(&ch->version)), 2 * sizeof(uint32_t));
     mb_write32(&ch->req_queue.idx_p, 0);
     mb_write32(&ch->req_queue.idx_c, 0);
     mb_write32(&ch->resp_queue.idx_p, 0);
     mb_write32(&ch->resp_queue.idx_c, 0);
-    __mb_wfence((mbptr_t)((uintptr_t)(ch)), sizeof(mb_channel));
+    __mb_wfence((mbptr_t)((uintptr_t)(&ch->req_queue)), sizeof(mb_req_queue));
+    __mb_wfence((mbptr_t)((uintptr_t)(&ch->resp_queue)), sizeof(mb_resp_queue));
 }
 
 static inline bool req_can_put(mb_channel *ch)
